@@ -1,18 +1,40 @@
 let socket = io();
 
 let containerDiv = document.querySelector(".cursor-container");
+let errorDiv = document.querySelector(".error");
 
-function mouseHasMoved(event) {
-  let x = event.clientX;
-  let y = event.clientY;
+navigator.permissions.query({ name: "accelerometer" }).then(function (result) {
+  if (result.state === "granted") {
+    //   showLocalNewsWithGeolocation();
+    errorDiv.style.visibility = "visible";
 
-  socket.emit("cursor-moved", {
-    x: x,
-    y: y,
-  });
+    let acl = new AbsoluteOrientationSensor();
+    acl.start();
+
+    acl.addEventListener("reading", onAccelerometerReading);
+  } else if (result.state === "prompt") {
+    //   showButtonToEnableLocalNews();
+  }
+  // Don't do anything if the permission was denied.
+});
+
+function onAccelerometerReading(event) {
+  errorDiv.style.visibility = "visible";
+  let { quaternion } = event.target;
+  console.log("event", event);
+
+  containerDiv.innerHTML = JSON.stringify(quaternion);
+
+  //   console.log("Acceleration along the X-axis " + acl.x);
+  //   console.log("Acceleration along the Y-axis " + acl.y);
+  //   console.log("Acceleration along the Z-axis " + acl.z);
+
+  //   containerDiv.innerHTML = "X: " + x + ", Y: " + y + ", Z: " + z;
+
+  socket.emit("accelerometer-reading", [...quaternion]);
 }
 
-document.body.addEventListener("mousemove", mouseHasMoved);
+// document.body.addEventListener("mousemove", mouseHasMoved);
 
 function cursorsChanged(cursors) {
   let allCursorDivs = containerDiv.querySelectorAll(".cursor");

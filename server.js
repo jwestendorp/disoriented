@@ -6,26 +6,29 @@ let app = express();
 let server = http.createServer(app);
 let io = socketIO(server);
 
-let cursors = {};
+let phones = {};
 
 function newSocketConnection(socket) {
-  cursors[socket.id] = {
+  let { id } = socket;
+
+  phones[socket.id] = {
     x: 0,
     y: 0,
   };
 
   function socketDisconnected() {
-    delete cursors[socket.id];
+    delete phones[socket.id];
   }
 
-  function cursorMoved(coordinate) {
-    cursors[socket.id] = coordinate;
+  function onAccelerometerReading(axes) {
+    phones[socket.id] = axes;
+    console.log(id, axes);
 
-    io.emit("cursor-object-changed", cursors);
+    // io.emit("cursor-object-changed", phones);
   }
 
   socket.on("disconnect", socketDisconnected);
-  socket.on("cursor-moved", cursorMoved);
+  socket.on("accelerometer-reading", onAccelerometerReading);
 }
 
 io.on("connection", newSocketConnection);
@@ -34,3 +37,4 @@ app.use("/canvas", express.static("./app/canvas"));
 app.use("/", express.static("./app/controller"));
 
 server.listen(8080);
+console.log("server running");
